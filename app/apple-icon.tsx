@@ -11,8 +11,8 @@ export const contentType = "image/png";
 export default function Icon() {
   return new ImageResponse(
     <svg
-      width="140px"
-      height="140px"
+      width="180px"
+      height="180px"
       viewBox="0 0 32 32"
       xmlns="http://www.w3.org/2000/svg"
       fill="#ffffff"
