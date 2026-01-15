@@ -38,7 +38,12 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - manifest.json (web manifest)
+     * - manifest.webmanifest (web manifest)
+     * - icon- (icon files)
+     * - apple-icon (apple touch icons)
+     * - login (login page)
+     * - public (public assets)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|manifest.json|manifest.webmanifest|icon-|apple-icon|login|/).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.json|manifest.webmanifest|icon-|apple-icon|login|public).*)",
   ],
 };
