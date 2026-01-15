@@ -17,6 +17,7 @@ import {
   DollarSign,
   ChevronDown,
   ChevronUp,
+  User,
 } from "lucide-react";
 import { OrderData } from "@/types/productsTypes";
 
