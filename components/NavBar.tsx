@@ -14,7 +14,9 @@ const NAV_ITEMS = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+
+  if (status !== "authenticated") return null;
 
   return (
     <nav className="sticky top-0 z-50 transition-all duration-300 bg-background/80 backdrop-blur-xl border-b border-border shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] dark:shadow-none">
