@@ -15,6 +15,8 @@ import {
   Package,
   CalendarDays,
   DollarSign,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { OrderData } from "@/types/productsTypes";
 
@@ -24,7 +26,7 @@ export default function HistoryPage() {
   const { data: session } = useSession();
   const [sortBy, setSortBy] = useState<SortOption>("date");
 
-  const { data: driver } = useSWR(
+  const { data: driver, isLoading: driverLoading } = useSWR(
     session?.user?.email ? ["driver-info", session.user.email] : null,
     ([, email]) => getDriverInfo(email),
     {
@@ -62,7 +64,7 @@ export default function HistoryPage() {
     });
   }, [orders, sortBy]);
 
-  if (!session || isLoading) {
+  if (!session || isLoading || driverLoading) {
     return (
       <div
         className="flex flex-col items-center justify-center min-h-screen gap-4 bg-background"
@@ -144,149 +146,171 @@ export default function HistoryPage() {
 }
 
 function OrderHistory({ orders }: { orders: OrderData[] }) {
+  const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
+
+  const toggleOrderExpansion = (orderId: string) => {
+    setExpandedOrders((prev) =>
+      prev.includes(orderId)
+        ? prev.filter((id) => id !== orderId)
+        : [...prev, orderId],
+    );
+  };
+
   return (
     <div className="space-y-4 pb-20">
-      {orders.map((order) => (
-        <div
-          key={order.id}
-          className="bg-card border border-border rounded-3xl overflow-hidden transition-all hover:border-primary/30 shadow-sm"
-        >
-          {/* Top Bar: Status & ID */}
-          <div className="px-6 py-4 border-b border-border flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div
-                className={`p-2 rounded-xl ${
-                  order.status === "Delivered"
-                    ? "bg-success/10 text-success"
-                    : "bg-primary/10 text-primary"
-                }`}
-              >
-                {order.status === "Delivered" ? (
-                  <CheckCircle2 size={16} />
-                ) : (
-                  <Truck size={16} />
-                )}
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  رقم الطلب
-                </p>
-                <p className="text-xs font-mono font-bold text-foreground uppercase">
-                  {order.id.slice(0, 8)}
-                </p>
-              </div>
-            </div>
+      {orders.map((order) => {
+        const isExpanded = expandedOrders.includes(order.id);
+
+        return (
+          <div
+            key={order.id}
+            className="bg-card border border-border rounded-3xl overflow-hidden transition-all hover:border-primary/30 shadow-sm"
+          >
+            {/* --- COLLAPSIBLE HEADER --- */}
             <div
-              className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter italic border ${
-                order.status === "Delivered"
-                  ? "border-success/20 text-success bg-success/5"
-                  : "border-primary/20 text-primary bg-primary/5"
-              }`}
+              onClick={() => toggleOrderExpansion(order.id)}
+              className="p-5 cursor-pointer hover:bg-muted/30 transition-colors"
             >
-              {order.status === "Delivered" ? "تم التوصيل" : order.status}
-            </div>
-          </div>
-
-          {/* Content Body */}
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Column 1: Customer & Logistics */}
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="mt-1 text-muted-foreground">
-                  <MapPin size={14} />
-                </div>
-                <div className="text-right">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">
-                    الوجهة
-                  </p>
-                  <p className="text-sm font-bold text-foreground leading-tight">
-                    {order.customer_name}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground italic">
-                    {order.shippingInfo?.city}، {order.shippingInfo?.address}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-6 justify-end">
-                {order.deliveredAt && (
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <p className="text-[8px] font-black uppercase text-muted-foreground">
-                        تم التوصيل
-                      </p>
-                      <p className="text-[10px] font-bold text-success">
-                        {new Date(order.deliveredAt).toLocaleDateString(
-                          "ar-EG",
-                        )}{" "}
-                        /{" "}
-                        {new Date(order.deliveredAt).toLocaleTimeString(
-                          "ar-EG",
-                          {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          },
-                        )}
-                      </p>
-                    </div>
-                    <Clock size={14} className="text-success" />
-                  </div>
-                )}
+              <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="text-right">
-                    <p className="text-[8px] font-black uppercase text-muted-foreground">
-                      تم الإنشاء
+                  <span className="text-[10px] font-black text-primary bg-primary/10 px-2.5 py-1 rounded-xl uppercase tracking-wider">
+                    #{order.id.slice(-6).toUpperCase()}
+                  </span>
+                  <div
+                    className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter italic border ${
+                      order.status === "Delivered"
+                        ? "border-success/20 text-success bg-success/5"
+                        : "border-primary/20 text-primary bg-primary/5"
+                    }`}
+                  >
+                    {order.status === "Delivered" ? "تم التوصيل" : order.status}
+                  </div>
+                </div>
+                {isExpanded ? (
+                  <ChevronUp size={16} className="text-muted-foreground" />
+                ) : (
+                  <ChevronDown size={16} className="text-muted-foreground" />
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <User size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">
+                      العميل
                     </p>
-                    <p className="text-[10px] font-bold text-foreground">
-                      {new Date(order.createdAt).toLocaleDateString("ar-EG")} /{" "}
-                      {new Date(order.createdAt).toLocaleTimeString("ar-EG", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                    <p className="text-sm font-bold text-foreground truncate">
+                      {order.customer_name}
                     </p>
                   </div>
-                  <Calendar size={14} className="text-muted-foreground" />
+                </div>
+
+                <div className="text-left">
+                  <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">
+                    الإجمالي
+                  </p>
+                  <p className="text-sm font-black text-success">
+                    {order.totalAmount.toLocaleString("en-US") || 0} ج.س
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Column 2: Products List */}
-            <div className="bg-muted rounded-2xl p-4 border border-border">
-              <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2 justify-end">
-                قائمة الطلبات <Package size={12} />
-              </p>
-              <div className="space-y-2">
-                {order.productsList.map((product: any, idx: number) => (
-                  <div
-                    key={idx}
-                    className="flex justify-between items-center text-xs"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 flex items-center justify-center bg-primary text-white rounded-lg text-[9px] font-black">
-                        {product.p_qu}x
-                      </span>
-                      <span className="font-bold text-foreground truncate max-w-[120px]">
-                        {product.p_name}
-                      </span>
+            {/* --- EXPANDED CONTENT --- */}
+            {isExpanded && (
+              <div className="px-5 pb-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
+                {/* Location & Time Grid */}
+                <div className="pt-4 border-t border-dashed border-border space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                      <MapPin size={16} />
                     </div>
-                    <span className="font-mono text-primary font-black">
-                      ${product.p_cost.toLocaleString()}
-                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">
+                        العنوان
+                      </p>
+                      <p className="text-[11px] text-muted-foreground italic leading-tight">
+                        {order.shippingInfo?.city}،{" "}
+                        {order.shippingInfo?.address}
+                      </p>
+                    </div>
                   </div>
-                ))}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-muted/50 p-3 rounded-2xl border border-border/50">
+                      <div className="flex items-center gap-2 mb-1 justify-end">
+                        <span className="text-[8px] font-black uppercase text-muted-foreground">
+                          وقت الطلب
+                        </span>
+                        <Calendar size={12} className="text-muted-foreground" />
+                      </div>
+                      <p className="text-[10px] font-bold text-foreground text-right">
+                        {new Date(order.createdAt).toLocaleDateString("ar-EG")}{" "}
+                        {new Date(order.createdAt).toLocaleTimeString("ar-EG", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+
+                    <div className="bg-success/5 p-3 rounded-2xl border border-success/10">
+                      <div className="flex items-center gap-2 mb-1 justify-end">
+                        <span className="text-[8px] font-black uppercase text-success/70">
+                          وقت التوصيل
+                        </span>
+                        <Clock size={12} className="text-success/70" />
+                      </div>
+                      <p className="text-[10px] font-bold text-success text-right">
+                        {order.deliveredAt
+                          ? `${new Date(order.deliveredAt).toLocaleDateString("ar-EG")} ${new Date(
+                              order.deliveredAt,
+                            ).toLocaleTimeString("ar-EG", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}`
+                          : "---"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Products List */}
+                <div className="bg-muted rounded-2xl p-4 border border-border">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+                      تفاصيل الفاتورة
+                    </span>
+                    <Package size={12} className="text-muted-foreground" />
+                  </div>
+                  <div className="space-y-2">
+                    {order.productsList.map((product: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-center bg-background/50 p-2.5 rounded-xl border border-border/50"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="w-5 h-5 flex items-center justify-center bg-primary/10 text-primary rounded-lg text-[9px] font-black">
+                            {product.p_qu}x
+                          </span>
+                          <span className="text-[11px] font-bold text-foreground">
+                            {product.p_name}
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-black text-foreground">
+                          {product.p_cost.toLocaleString()} ج.س
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="mt-4 pt-3 border-t border-border flex justify-between items-end">
-                <p className="text-[9px] font-black uppercase text-muted-foreground italic">
-                  القيمة الإجمالية
-                </p>
-                <p className="text-lg font-black text-foreground tracking-tighter">
-                  ${order.totalAmount.toLocaleString()}
-                </p>
-              </div>
-            </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

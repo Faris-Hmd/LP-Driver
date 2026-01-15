@@ -6,15 +6,14 @@ import {
   collection,
 } from "firebase/firestore";
 const firebaseConfig = {
-  apiKey: "AIzaSyACa5a0MmohKo2h4-fN2ffnl7BlgLDr4iQ",
-  authDomain: "sudan-pc-shop.firebaseapp.com",
-  projectId: "sudan-pc-shop",
-  storageBucket: "sudan-pc-shop.firebasestorage.app",
-  messagingSenderId: "170352568774",
-  appId: "1:170352568774:web:621c05df397bc057832ac7",
-  measurementId: "G-4H5XTW59TM",
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
+  measurementId: process.env.FIREBASE_MEASUREMENT_ID,
 };
-
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 // Use a cleaner environment check for 2025 workflows
@@ -32,7 +31,9 @@ const isDevelopment =
 //     console.warn("✘ Firestore Emulator connection failed:", err);
 //   }
 // }
-export const productsRef = collection(db, "products");
+export const productsRef = collection(db, "pizza_products");
 export const usersRef = collection(db, "users");
 export const driversRef = collection(db, "drivers");
+
 export const ordersRef = collection(db, "orders");
+export const historyRef = collection(db, "history");
