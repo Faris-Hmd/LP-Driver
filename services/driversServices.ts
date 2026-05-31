@@ -3,6 +3,7 @@
 import { driversRef } from "@/lib/firebase";
 import { getDocs, query, where } from "firebase/firestore";
 import { Driver } from "@/types/userTypes";
+import { serializeData } from "@/lib/serialize";
 
 /**
  * GET DRIVER BY EMAIL
@@ -13,9 +14,11 @@ export async function getDriverByEmail(email: string): Promise<Driver | null> {
     const snap = await getDocs(q);
     if (snap.empty) return null;
     const d = snap.docs[0];
-    return { ...d.data(), id: d.id } as Driver;
+    const driver = { ...d.data(), id: d.id } as Driver;
+    return serializeData(driver);
   } catch (error) {
     console.error("Error fetching driver by email:", error);
     return null;
   }
 }
+

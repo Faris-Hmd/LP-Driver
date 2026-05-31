@@ -17,6 +17,7 @@ import {
 import { db, ordersRef } from "@/lib/firebase";
 import { revalidatePath } from "next/cache";
 import { OrderData } from "@/types/productsTypes";
+import { serializeData } from "@/lib/serialize";
 
 /**
  * UPDATE: Uses Partial<OrderData> to allow updating only specific fields safely
@@ -49,15 +50,18 @@ export async function getOrdersWh(
     // 3. Execute
     const snap = await getDocs(q);
 
-    return snap.docs.map((d) => {
+    const orders = snap.docs.map((d) => {
       return {
         ...d.data(),
         id: d.id,
         deleveratstamp: "",
       } as OrderData;
     });
+
+    return serializeData(orders);
   } catch (error) {
     console.error("Firestore Query Error:", error);
     return [];
   }
 }
+

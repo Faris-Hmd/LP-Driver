@@ -82,11 +82,11 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-10" dir="rtl">
-      <header className="sticky top-0 z-50 bg-card px-4 py-4 border-b border-border shadow-sm">
+    <div className="min-h-screen bg-background pb-16" dir="rtl">
+      <header className="bg-card px-4 py-3.5 border-b border-border shadow-sm">
         <div className="max-w-xl mx-auto flex flex-row items-center justify-between gap-3 text-center">
           <div className="text-right">
-            <h1 className="text-xl font-black text-foreground uppercase tracking-tighter">
+            <h1 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-tighter">
               سجل <span className="text-primary">العمليات</span>
             </h1>
             <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-0.5">
@@ -94,8 +94,8 @@ export default function HistoryPage() {
             </p>
           </div>
 
-          <div className="bg-muted px-4 py-1.5 rounded-full border border-border flex items-center justify-center">
-            <span className="text-[10px] font-black text-foreground uppercase tracking-[0.2em] leading-none mt-0.5">
+          <div className="bg-muted px-3 py-1 rounded-full border border-border flex items-center justify-center">
+            <span className="text-[9px] sm:text-[10px] font-black text-foreground uppercase tracking-[0.2em] leading-none mt-0.5">
               {processedOrders.length} مهمة منتهية
             </span>
           </div>
@@ -103,28 +103,28 @@ export default function HistoryPage() {
       </header>
 
       {/* --- SORTING & FILTERS --- */}
-      <div className="max-w-xl mx-auto px-4 pt-6">
-        <div className="flex bg-muted p-1 rounded-2xl border border-border">
+      <div className="max-w-xl mx-auto px-4 pt-4">
+        <div className="flex bg-muted p-1 rounded-xl border border-border">
           <button
             onClick={() => setSortBy("date")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all duration-300 ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[9px] sm:text-[10px] font-black uppercase transition-all duration-300 ${
               sortBy === "date"
                 ? "bg-card text-primary shadow-sm border border-border/50"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <CalendarDays size={14} />
+            <CalendarDays size={12} />
             الأحدث
           </button>
           <button
             onClick={() => setSortBy("value")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all duration-300 ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[9px] sm:text-[10px] font-black uppercase transition-all duration-300 ${
               sortBy === "value"
                 ? "bg-card text-primary shadow-sm border border-border/50"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <DollarSign size={14} />
+            <DollarSign size={12} />
             القيمة الأعلى
           </button>
         </div>
@@ -135,8 +135,8 @@ export default function HistoryPage() {
           <OrderHistory orders={processedOrders} />
         ) : (
           <div className="py-20 text-center opacity-40">
-            <Package className="mx-auto mb-4" size={48} />
-            <p className="text-[10px] font-black uppercase tracking-widest text-foreground">
+            <Package className="mx-auto mb-4" size={40} />
+            <p className="text-[9px] font-black uppercase tracking-widest text-foreground">
               لم يتم العثور على سجلات مطابقة
             </p>
           </div>
@@ -158,27 +158,27 @@ function OrderHistory({ orders }: { orders: OrderData[] }) {
   };
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-3 pb-20">
       {orders.map((order) => {
         const isExpanded = expandedOrders.includes(order.id);
 
         return (
           <div
             key={order.id}
-            className="bg-card border border-border rounded-3xl overflow-hidden transition-all hover:border-primary/30 shadow-sm"
+            className="bg-card border border-border rounded-2xl overflow-hidden transition-all hover:border-primary/30 shadow-sm"
           >
             {/* --- COLLAPSIBLE HEADER --- */}
             <div
               onClick={() => toggleOrderExpansion(order.id)}
-              className="p-5 cursor-pointer hover:bg-muted/30 transition-colors"
+              className="p-4 sm:p-5 cursor-pointer hover:bg-muted/30 transition-colors"
             >
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black text-primary bg-primary/10 px-2.5 py-1 rounded-xl uppercase tracking-wider">
+                  <span className="text-[9px] sm:text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg uppercase tracking-wider">
                     #{order.id.slice(-6).toUpperCase()}
                   </span>
                   <div
-                    className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter italic border ${
+                    className={`px-2 py-0.5 rounded-lg text-[8px] sm:text-[9px] font-black uppercase tracking-tighter italic border ${
                       order.status === "Delivered"
                         ? "border-success/20 text-success bg-success/5"
                         : "border-primary/20 text-primary bg-primary/5"
@@ -188,32 +188,32 @@ function OrderHistory({ orders }: { orders: OrderData[] }) {
                   </div>
                 </div>
                 {isExpanded ? (
-                  <ChevronUp size={16} className="text-muted-foreground" />
+                  <ChevronUp size={14} className="text-muted-foreground" />
                 ) : (
-                  <ChevronDown size={16} className="text-muted-foreground" />
+                  <ChevronDown size={14} className="text-muted-foreground" />
                 )}
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    <User size={16} />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <User size={14} />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">
+                  <div className="min-w-0 text-right">
+                    <p className="text-[8px] sm:text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">
                       العميل
                     </p>
-                    <p className="text-sm font-bold text-foreground truncate">
+                    <p className="text-xs sm:text-sm font-black text-foreground truncate uppercase tracking-tighter">
                       {order.customer_name}
                     </p>
                   </div>
                 </div>
 
                 <div className="text-left">
-                  <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">
+                  <p className="text-[8px] sm:text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">
                     الإجمالي
                   </p>
-                  <p className="text-sm font-black text-success">
+                  <p className="text-xs sm:text-sm font-black text-success">
                     {order.totalAmount.toLocaleString("en-US") || 0} ج.س
                   </p>
                 </div>
@@ -222,33 +222,33 @@ function OrderHistory({ orders }: { orders: OrderData[] }) {
 
             {/* --- EXPANDED CONTENT --- */}
             {isExpanded && (
-              <div className="px-5 pb-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="px-4 pb-4 space-y-4 sm:px-5 sm:pb-5 sm:space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
                 {/* Location & Time Grid */}
-                <div className="pt-4 border-t border-dashed border-border space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground shrink-0">
-                      <MapPin size={16} />
+                <div className="pt-3.5 border-t border-dashed border-border space-y-4">
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                      <MapPin size={14} />
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">
+                    <div className="min-w-0 text-right">
+                      <p className="text-[8px] sm:text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">
                         العنوان
                       </p>
-                      <p className="text-[11px] text-muted-foreground italic leading-tight">
+                      <p className="text-[10px] sm:text-[11px] text-muted-foreground italic leading-tight">
                         {order.shippingInfo?.city}،{" "}
                         {order.shippingInfo?.address}
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-muted/50 p-3 rounded-2xl border border-border/50">
-                      <div className="flex items-center gap-2 mb-1 justify-end">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="bg-muted/50 p-2.5 rounded-xl border border-border/50">
+                      <div className="flex items-center gap-1.5 mb-1 justify-end">
                         <span className="text-[8px] font-black uppercase text-muted-foreground">
                           وقت الطلب
                         </span>
-                        <Calendar size={12} className="text-muted-foreground" />
+                        <Calendar size={10} className="text-muted-foreground" />
                       </div>
-                      <p className="text-[10px] font-bold text-foreground text-right">
+                      <p className="text-[9px] sm:text-[10px] font-bold text-foreground text-right">
                         {new Date(order.createdAt).toLocaleDateString("ar-EG")}{" "}
                         {new Date(order.createdAt).toLocaleTimeString("ar-EG", {
                           hour: "2-digit",
@@ -257,14 +257,14 @@ function OrderHistory({ orders }: { orders: OrderData[] }) {
                       </p>
                     </div>
 
-                    <div className="bg-success/5 p-3 rounded-2xl border border-success/10">
-                      <div className="flex items-center gap-2 mb-1 justify-end">
+                    <div className="bg-success/5 p-2.5 rounded-xl border border-success/10">
+                      <div className="flex items-center gap-1.5 mb-1 justify-end">
                         <span className="text-[8px] font-black uppercase text-success/70">
                           وقت التوصيل
                         </span>
-                        <Clock size={12} className="text-success/70" />
+                        <Clock size={10} className="text-success/70" />
                       </div>
-                      <p className="text-[10px] font-bold text-success text-right">
+                      <p className="text-[9px] sm:text-[10px] font-bold text-success text-right">
                         {order.deliveredAt
                           ? `${new Date(order.deliveredAt).toLocaleDateString("ar-EG")} ${new Date(
                               order.deliveredAt,
@@ -279,28 +279,28 @@ function OrderHistory({ orders }: { orders: OrderData[] }) {
                 </div>
 
                 {/* Products List */}
-                <div className="bg-muted rounded-2xl p-4 border border-border">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+                <div className="bg-muted rounded-xl p-3 sm:p-4 border border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-muted-foreground">
                       تفاصيل الفاتورة
                     </span>
-                    <Package size={12} className="text-muted-foreground" />
+                    <Package size={10} className="text-muted-foreground" />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {order.productsList.map((product: any, idx: number) => (
                       <div
                         key={idx}
-                        className="flex justify-between items-center bg-background/50 p-2.5 rounded-xl border border-border/50"
+                        className="flex justify-between items-center bg-background/50 p-2.5 rounded-lg border border-border/50"
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 flex items-center justify-center bg-primary/10 text-primary rounded-lg text-[9px] font-black">
+                        <div className="flex items-center gap-2 text-right">
+                          <span className="w-5 h-5 flex items-center justify-center bg-primary/10 text-primary rounded text-[9px] font-black">
                             {product.p_qu}x
                           </span>
-                          <span className="text-[11px] font-bold text-foreground">
+                          <span className="text-[10px] sm:text-[11px] font-bold text-foreground">
                             {product.p_name}
                           </span>
                         </div>
-                        <span className="text-[11px] font-black text-foreground">
+                        <span className="text-[10px] sm:text-[11px] font-black text-foreground">
                           {product.p_cost.toLocaleString()} ج.س
                         </span>
                       </div>
