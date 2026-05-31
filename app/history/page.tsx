@@ -1,10 +1,13 @@
 "use client";
 
 import useSWR from "swr";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { getOrdersWh } from "@/services/ordersServices";
 import { getDriverInfo } from "@/services/userServices";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { ordersRef } from "@/lib/firebase";
+import { onSnapshot, query, where } from "firebase/firestore";
+import { serializeData } from "@/lib/serialize";
 import {
   Loader2,
   MapPin,
@@ -18,6 +21,7 @@ import {
   ChevronDown,
   ChevronUp,
   User,
+  AlertTriangle,
 } from "lucide-react";
 import { OrderData } from "@/types/productsTypes";
 
@@ -37,16 +41,42 @@ export default function HistoryPage() {
     },
   );
 
-  const { data: orders, isLoading } = useSWR(
-    driver?.id ? ["driver-orders", driver.id] : null,
-    async ([, driverId]) =>
-      await getOrdersWh([{ field: "driverId", op: "==", val: driverId }]),
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      dedupingInterval: 10000,
-    },
-  );
+  const [orders, setOrders] = useState<OrderData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [firestoreError, setFirestoreError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!driver?.id) {
+      setOrders([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setFirestoreError(null);
+    const q = query(ordersRef, where("driverId", "==", driver.id));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const list = snapshot.docs.map((d) => {
+          return {
+            ...d.data(),
+            id: d.id,
+            deleveratstamp: "",
+          } as OrderData;
+        });
+        setOrders(serializeData(list));
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error("Firestore onSnapshot error:", error);
+        setFirestoreError(error.message || String(error));
+        setIsLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [driver?.id]);
 
   const processedOrders = useMemo(() => {
     if (!orders) return [];
@@ -65,7 +95,8 @@ export default function HistoryPage() {
     });
   }, [orders, sortBy]);
 
-  if (!session || isLoading || driverLoading) {
+  // Loading state
+  if (!session || driverLoading || (driver && isLoading)) {
     return (
       <div
         className="flex flex-col items-center justify-center min-h-screen gap-4 bg-background"
@@ -77,6 +108,35 @@ export default function HistoryPage() {
           <br />
           أرشيف المحطة...
         </p>
+      </div>
+    );
+  }
+
+  // Handle case where user is logged in but not registered in "drivers" collection
+  if (session && !driverLoading && !driver) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center min-h-screen bg-background p-6 text-center"
+        dir="rtl"
+      >
+        <div className="max-w-md w-full bg-card border border-border rounded-[2rem] p-8 shadow-2xl shadow-primary/5">
+          <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle size={32} />
+          </div>
+          <h1 className="text-xl font-black text-foreground">الحساب غير مسجل كسائق</h1>
+          <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+            البريد الإلكتروني <span className="font-bold text-foreground">{session?.user?.email}</span> غير مسجل في نظام السائقين لدينا.
+          </p>
+          <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+            يرجى تسجيل الخروج وتسجيل الدخول بالحساب المعتمد أو مراجعة إدارة ليبر بيتزا.
+          </p>
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="mt-8 w-full py-4 bg-destructive text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg shadow-destructive/10 hover:shadow-destructive/20"
+          >
+            تسجيل الخروج والمحاولة مرة أخرى
+          </button>
+        </div>
       </div>
     );
   }
@@ -130,7 +190,18 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      <div className="max-w-xl mx-auto p-4">
+      <div className="max-w-xl mx-auto p-4 space-y-4">
+        {firestoreError && (
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-2xl p-5 text-right flex items-start gap-3 shadow-sm">
+            <AlertTriangle size={20} className="shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-xs font-black">فشل الاتصال المباشر بقاعدة البيانات</p>
+              <p className="text-[10px] font-mono opacity-80 leading-normal">{firestoreError}</p>
+              <p className="text-[9px] opacity-70">يرجى التأكد من اتصال الإنترنت وإعادة تحميل الصفحة.</p>
+            </div>
+          </div>
+        )}
+
         {processedOrders.length > 0 ? (
           <OrderHistory orders={processedOrders} />
         ) : (

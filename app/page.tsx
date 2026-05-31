@@ -1,10 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
-import { useSession } from "next-auth/react";
+import React, { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
 import useSWR from "swr";
 import { getOrdersWh, upOrder } from "@/services/ordersServices";
 import { getDriverByEmail } from "@/services/driversServices";
+import { ordersRef } from "@/lib/firebase";
+import { onSnapshot, query, where } from "firebase/firestore";
+import { serializeData } from "@/lib/serialize";
+import { OrderData } from "@/types/productsTypes";
 import {
   MapPin,
   Phone,
@@ -17,6 +21,7 @@ import {
   Navigation,
   ChevronDown,
   ChevronUp,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -84,20 +89,47 @@ export default function DriverTaskPage() {
     },
   );
 
-  const {
-    data: orders,
-    isLoading: ordersLoading,
-    mutate: mutateOrders,
-  } = useSWR(
-    driver?.id ? `driver-orders-${driver.id}` : null,
-    () =>
-      getOrdersWh([{ field: "driverId", op: "==", val: driver?.id as string }]),
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      dedupingInterval: 10000,
-    },
-  );
+  const [orders, setOrders] = useState<OrderData[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [firestoreError, setFirestoreError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!driver?.id) {
+      setOrders([]);
+      setOrdersLoading(false);
+      return;
+    }
+
+    setOrdersLoading(true);
+    setFirestoreError(null);
+    const q = query(
+      ordersRef,
+      where("driverId", "==", driver.id)
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const list = snapshot.docs.map((d) => {
+          return {
+            ...d.data(),
+            id: d.id,
+            deleveratstamp: "",
+          } as OrderData;
+        });
+        setOrders(serializeData(list));
+        setOrdersLoading(false);
+      },
+      (error) => {
+        console.error("Firestore onSnapshot error:", error);
+        setFirestoreError(error.message || String(error));
+        toast.error("حدث خطأ أثناء الاتصال المباشر بالطلبات");
+        setOrdersLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [driver?.id]);
 
   const handleFinalHandover = async () => {
     if (!orderToConfirm) return;
@@ -110,7 +142,6 @@ export default function DriverTaskPage() {
       });
       toast.success("تم التسليم بنجاح");
       setOrderToConfirm(null);
-      mutateOrders();
     } catch (error) {
       toast.error("خطأ في الإرسال");
     } finally {
@@ -118,7 +149,8 @@ export default function DriverTaskPage() {
     }
   };
 
-  if (authStatus === "loading" || driverLoading || ordersLoading) {
+  // If loading session or driver details
+  if (authStatus === "loading" || driverLoading || (driver && ordersLoading)) {
     return (
       <div
         className="flex flex-col items-center justify-center min-h-screen bg-background"
@@ -128,6 +160,35 @@ export default function DriverTaskPage() {
         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
           جاري المزامنة...
         </p>
+      </div>
+    );
+  }
+
+  // Handle case where user is logged in but not registered in "drivers" collection
+  if (authStatus === "authenticated" && !driverLoading && !driver) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center min-h-screen bg-background p-6 text-center"
+        dir="rtl"
+      >
+        <div className="max-w-md w-full bg-card border border-border rounded-[2rem] p-8 shadow-2xl shadow-primary/5">
+          <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle size={32} />
+          </div>
+          <h1 className="text-xl font-black text-foreground">الحساب غير مسجل كسائق</h1>
+          <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+            البريد الإلكتروني <span className="font-bold text-foreground">{session?.user?.email}</span> غير مسجل في نظام السائقين لدينا.
+          </p>
+          <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+            يرجى تسجيل الخروج وتسجيل الدخول بالحساب المعتمد أو مراجعة إدارة ليبر بيتزا.
+          </p>
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="mt-8 w-full py-4 bg-destructive text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg shadow-destructive/10 hover:shadow-destructive/20"
+          >
+            تسجيل الخروج والمحاولة مرة أخرى
+          </button>
+        </div>
       </div>
     );
   }
@@ -203,6 +264,17 @@ export default function DriverTaskPage() {
       </header>
 
       <main className="max-w-xl mx-auto p-4 space-y-4">
+        {firestoreError && (
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-2xl p-5 text-right flex items-start gap-3 shadow-sm">
+            <AlertTriangle size={20} className="shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-xs font-black">فشل الاتصال المباشر بقاعدة البيانات</p>
+              <p className="text-[10px] font-mono opacity-80 leading-normal">{firestoreError}</p>
+              <p className="text-[9px] opacity-70">يرجى التأكد من اتصال الإنترنت وإعادة تحميل الصفحة.</p>
+            </div>
+          </div>
+        )}
+
         <section className="space-y-3">
           <h2 className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] px-1">
             المهام النشطة
